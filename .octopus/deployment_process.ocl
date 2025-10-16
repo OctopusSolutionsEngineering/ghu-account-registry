@@ -35,6 +35,7 @@ step "production-approve" {
             Octopus.Action.Manual.BlockConcurrentDeployments = "True"
             Octopus.Action.Manual.Instructions = "Please approve"
             Octopus.Action.Manual.ResponsibleTeamIds = "global/platform-hub-managers"
+            Octopus.Action.RunOnServer = "false"
         }
     }
 }
@@ -42,7 +43,7 @@ step "production-approve" {
 process_template "deploy-api" {
     name = "Deploy API"
     process_template_slug = "ph-kubernetes-deploy-yaml-demo-app"
-    version_mask = "PreRelease"
+    version_mask = "1.X"
 
     package_parameter "Template.Container" {
         feed = "docker-hub"
