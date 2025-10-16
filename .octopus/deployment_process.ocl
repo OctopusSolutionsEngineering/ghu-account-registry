@@ -31,6 +31,7 @@ step "production-approve" {
     action {
         action_type = "Octopus.Manual"
         environments = ["staging", "production"]
+        is_disabled = true
         properties = {
             Octopus.Action.Manual.BlockConcurrentDeployments = "True"
             Octopus.Action.Manual.Instructions = "Please approve"
@@ -43,7 +44,7 @@ step "production-approve" {
 process_template "deploy-api" {
     name = "Deploy API"
     process_template_slug = "ph-kubernetes-deploy-yaml-demo-app"
-    version_mask = "1.X"
+    version_mask = "PreRelease"
 
     package_parameter "Template.Container" {
         feed = "docker-hub"
