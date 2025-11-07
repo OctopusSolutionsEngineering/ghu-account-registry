@@ -66,6 +66,14 @@ process_template "deploy-api" {
     parameter "Template.WindowSize" {
         value = "1"
     }
+
+    parameter "Template.Service.TargetPort" {
+        value = "80"
+    }
+
+    parameter "Template.Service.Port" {
+        value = "80"
+    }
 }
 
 step "smoke-test-service" {
@@ -109,7 +117,7 @@ step "run-a-kubectl-script" {
             Octopus.Action.Script.ScriptBody = <<-EOT
                 service="#{Octopus.Project.Slug}-service"
                 namespace="#{AccountManagement.Cluster.Namespace}"
-                port=8080
+                port=80
                 
                 kubectl config get-contexts
                 
