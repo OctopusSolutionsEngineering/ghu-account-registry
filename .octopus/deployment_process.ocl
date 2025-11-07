@@ -80,7 +80,7 @@ step "smoke-test-service" {
             Octopus.Action.RunOnServer = "false"
             Octopus.Action.Script.ScriptBody = <<-EOT
                 service="#{Octopus.Project.Slug}-service"
-                namespace=$OctopusParameters["AccountManagement.Cluster.Namespace"]
+                namespace="#{AccountManagement.Cluster.Namespace}"
                 port=8080
                 
                 kubectl config get-contexts | awk {'print $2'}
@@ -107,7 +107,7 @@ step "run-a-kubectl-script" {
         properties = {
             Octopus.Action.Script.ScriptBody = <<-EOT
                 service="#{Octopus.Project.Slug}-service"
-                namespace=$OctopusParameters["AccountManagement.Cluster.Namespace"]
+                namespace="#{AccountManagement.Cluster.Namespace}"
                 port=8080
                 
                 kubectl config get-contexts | awk {'print $2'}
