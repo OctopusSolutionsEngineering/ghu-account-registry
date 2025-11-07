@@ -100,7 +100,6 @@ step "run-a-kubectl-script" {
                 new_octopusartifact features.$environment.json
                 new_octopusartifact version.$environment.json
                 
-                #curl -v account-registry-service.kubecon-na-account-registry-development.svc.cluster.local:8080
                 EOT
             Octopus.Action.Script.ScriptSource = "Inline"
             Octopus.Action.Script.Syntax = "Bash"
