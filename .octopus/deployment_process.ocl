@@ -76,35 +76,6 @@ process_template "deploy-api" {
     }
 }
 
-step "smoke-test-service" {
-    name = "Smoke test service"
-    properties = {
-        Octopus.Action.TargetRoles = "account-registry"
-    }
-
-    action {
-        action_type = "Octopus.Script"
-        is_disabled = true
-        properties = {
-            Octopus.Action.RunOnServer = "false"
-            Octopus.Action.Script.ScriptBody = <<-EOT
-                service="#{Octopus.Project.Slug}-service"
-                namespace="#{AccountManagement.Cluster.Namespace}"
-                port=8080
-                
-                kubectl config get-contexts | awk {'print $2'}
-                
-                curl -v $service.$namespace.svc.cluster.local:$port
-                curl -v account-registry-service.kubecon-na-account-registry-development.svc.cluster.local:8080
-                EOT
-            Octopus.Action.Script.ScriptSource = "Inline"
-            Octopus.Action.Script.Syntax = "Bash"
-            OctopusUseBundledTooling = "False"
-        }
-        worker_pool_variable = ""
-    }
-}
-
 step "run-a-kubectl-script" {
     name = "Run a kubectl script"
     properties = {
