@@ -79,17 +79,46 @@ step "smoke-test-service" {
         properties = {
             Octopus.Action.RunOnServer = "false"
             Octopus.Action.Script.ScriptBody = <<-EOT
-                $service = "#{Octopus.Project.Slug}-service"
-                $namespace = $OctopusParameters["AccountManagement.Cluster.Namespace"]
-                $port = 8080
+                service="#{Octopus.Project.Slug}-service"
+                namespace=$OctopusParameters["AccountManagement.Cluster.Namespace"]
+                port=8080
                 
-                & curl "$($service).$($namespace).svc.cluster.local:$port"
+                kubectl config get-contexts | awk {'print $2'}
                 
+                curl -v $service.$namespace.svc.cluster.local:$port
+                curl -v account-registry-service.kubecon-na-account-registry-development.svc.cluster.local:8080
                 EOT
             Octopus.Action.Script.ScriptSource = "Inline"
-            Octopus.Action.Script.Syntax = "PowerShell"
+            Octopus.Action.Script.Syntax = "Bash"
             OctopusUseBundledTooling = "False"
         }
+        worker_pool_variable = ""
+    }
+}
+
+step "run-a-kubectl-script" {
+    name = "Run a kubectl script"
+    properties = {
+        Octopus.Action.TargetRoles = "account-registry"
+    }
+
+    action {
+        action_type = "Octopus.KubernetesRunScript"
+        properties = {
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                service="#{Octopus.Project.Slug}-service"
+                namespace=$OctopusParameters["AccountManagement.Cluster.Namespace"]
+                port=8080
+                
+                kubectl config get-contexts | awk {'print $2'}
+                
+                curl -v $service.$namespace.svc.cluster.local:$port
+                curl -v account-registry-service.kubecon-na-account-registry-development.svc.cluster.local:8080
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "Bash"
+        }
+        worker_pool = "hosted-windows"
         worker_pool_variable = ""
     }
 }
