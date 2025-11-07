@@ -117,7 +117,7 @@ step "run-a-kubectl-script" {
                 
                 kubectl get svc $service -n $namespace
                 
-                #curl -v $service.$namespace.svc.cluster.local:$port
+                curl -v $service.$namespace:$port
                 #curl -v account-registry-service.kubecon-na-account-registry-development.svc.cluster.local:8080
                 EOT
             Octopus.Action.Script.ScriptSource = "Inline"
