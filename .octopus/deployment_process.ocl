@@ -25,22 +25,6 @@ process_template "verify-artifacts" {
     }
 }
 
-step "production-approve" {
-    name = "Production Approve"
-
-    action {
-        action_type = "Octopus.Manual"
-        environments = ["staging", "production"]
-        is_disabled = true
-        properties = {
-            Octopus.Action.Manual.BlockConcurrentDeployments = "True"
-            Octopus.Action.Manual.Instructions = "Please approve"
-            Octopus.Action.Manual.ResponsibleTeamIds = "global/platform-hub-managers"
-            Octopus.Action.RunOnServer = "false"
-        }
-    }
-}
-
 process_template "deploy-api" {
     name = "Deploy API"
     process_template_slug = "ph-kubernetes-deploy-yaml-demo-app"
@@ -81,5 +65,31 @@ process_template "deploy-api" {
 
     parameter "Template.WindowSize" {
         value = "1"
+    }
+}
+
+step "smoke-test-service" {
+    name = "Smoke test service"
+    properties = {
+        Octopus.Action.TargetRoles = "account-registry"
+    }
+
+    action {
+        action_type = "Octopus.Script"
+        properties = {
+            Octopus.Action.RunOnServer = "false"
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                $service = "#{Octopus.Project.Slug}-service"
+                $namespace = $OctopusParameters["AccountManagement.Cluster.Namespace"]
+                $port = 8080
+                
+                & curl "$($service).$($namespace).svc.cluster.local:$port"
+                
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+            OctopusUseBundledTooling = "False"
+        }
+        worker_pool_variable = ""
     }
 }
