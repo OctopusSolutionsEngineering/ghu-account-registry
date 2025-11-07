@@ -115,18 +115,20 @@ step "run-a-kubectl-script" {
         action_type = "Octopus.KubernetesRunScript"
         properties = {
             Octopus.Action.Script.ScriptBody = <<-EOT
+                environment="#{Octopus.Environment.Slug}"
                 service="#{Octopus.Project.Slug}-service"
                 namespace="#{AccountManagement.Cluster.Namespace}"
                 port=80
                 
-                kubectl config get-contexts
+                curl $service.$namespace:$port/Features > features.$environment.json
+                curl $service.$namespace:$port/Version > version.$environment.json
                 
-                echo "---------------"
+                cat features.$environment.json
+                cat version.$environment.json
                 
-                kubectl get svc $service -n $namespace
+                new_octopusartifact features.$environment.json
+                new_octopusartifact version.$environment.json
                 
-                curl -v $service.$namespace:$port/Features
-                curl -v $service.$namespace:$port/Version
                 #curl -v account-registry-service.kubecon-na-account-registry-development.svc.cluster.local:8080
                 EOT
             Octopus.Action.Script.ScriptSource = "Inline"
