@@ -1,7 +1,7 @@
 process_template "verify-build-artifacts" {
     name = "Verify Build Artifacts"
     process_template_slug = "aws-reinvent-attahc-and-veridy-sbom"
-    version_mask = "1.X"
+    version_mask = "2.X"
 
     package_parameter "Template.SBOM.Artifact" {
         feed = "octopus-server-built-in"
