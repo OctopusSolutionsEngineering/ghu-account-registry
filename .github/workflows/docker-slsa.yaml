@@ -247,7 +247,7 @@ jobs:
 
   octopus_handoff:
     name: Handover to Octopus Deploy 🐙
-    needs: [configure, scan, create-gh-release, build, sbom]
+    needs: [configure, scan, create-gh-release, build, sbom, create_attestations]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
