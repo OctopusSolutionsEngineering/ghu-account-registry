@@ -244,3 +244,16 @@ jobs:
         id: websiteattest
         with:
           subject-checksums: subject.checksums.txt
+
+  octopus_handoff:
+    name: Handover to Octopus Deploy 🐙
+    needs: [configure, scan, create-gh-release, build, sbom]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Login to Octopus Deploy 🐙
+        uses: OctopusDeploy/login@v1
+        with:
+          server: ${{ env.OCTOPUS_URL }}
+          service_account_id: ${{ env.OCTOPUS_SERVICE_ACCOUNT }}
