@@ -161,9 +161,17 @@ jobs:
         with:
           scan-type: "fs"
           format: "github"
-          output: "dependency-results.sbom.json"
+          output: "gh-dependency-results.sbom.json"
           scan-ref: "."
           github-pat: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Trivy in for SPDX mode for Octopus Deploy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: 'fs'
+          format: 'spdx-json'
+          output: 'dependency-results.sbom.json'
+          scan-ref: '.'
 
       - name: Package SBOM
         id: "sbom_package"
