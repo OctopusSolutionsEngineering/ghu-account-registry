@@ -1,4 +1,32 @@
+process_template "verify-build-artifacts" {
+    name = "Verify Build Artifacts"
+    process_template_slug = "aws-reinvent-attahc-and-veridy-sbom"
+    version_mask = "1.X"
+
+    package_parameter "Template.SBOM.Artifact" {
+        feed = "octopus-server-built-in"
+        package_id = "ghu-account-registry.sbom"
+    }
+
+    parameter "Template.Docker.Account" {
+        value = "AccountManagement.Accounts.Docker"
+    }
+
+    parameter "Template.Git.AuthToken" {
+        value = "#{GitHub.Token}"
+    }
+
+    parameter "Template.Verify.WorkerPool" {
+        value = "WorkerPools-5336"
+    }
+
+    parameter "Template.Verify.ExecutionContainerFeed" {
+        value = "Feeds-7423"
+    }
+}
+
 process_template "verify-artifacts" {
+    is_disabled = true
     name = "Verify Artifacts"
     process_template_slug = "dsc-verify-build-artifacts-docker"
     version_mask = "1.X"
