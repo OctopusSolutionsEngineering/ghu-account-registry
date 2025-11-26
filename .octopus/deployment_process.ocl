@@ -12,16 +12,16 @@ process_template "verify-build-artifacts" {
         value = "AccountManagement.Accounts.Docker"
     }
 
-    parameter "Template.Git.AuthToken" {
-        value = "#{GitHub.Token}"
-    }
-
     parameter "Template.Verify.WorkerPool" {
         value = "WorkerPools-5336"
     }
 
     parameter "Template.Verify.ExecutionContainerFeed" {
         value = "Feeds-7423"
+    }
+
+    parameter "Template.Git.AuthToken" {
+        value = "#{project.auth.token}"
     }
 }
 
