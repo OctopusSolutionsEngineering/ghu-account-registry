@@ -50,7 +50,7 @@ jobs:
   create-gh-release:
     # Runs in parallel with Build (but waits for scan to ensure code quality)
     name: Publish GitHub Release
-    needs: [configure, scan]
+    needs: [configure, scan, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
