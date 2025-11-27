@@ -15,7 +15,7 @@ env:
 jobs:
   configure:
     runs-on: ubuntu-latest
-    name: Configure Workflow
+    name: Pipeline Init and Versioning
     outputs:
       version: ${{ steps.version-generator.outputs.version }}
     steps:
@@ -26,7 +26,7 @@ jobs:
   scan:
     # Runs in parallel with Build
     runs-on: ubuntu-latest
-    name: Scan Code
+    name: Scan Repo (SAST)
     needs: [configure] 
     permissions:
       security-events: write
@@ -49,7 +49,7 @@ jobs:
 
   create-gh-release:
     # Runs in parallel with Build (but waits for scan to ensure code quality)
-    name: Create GitHub Release
+    name: Publish GitHub Release
     needs: [configure, scan]
     runs-on: ubuntu-latest
     permissions:
@@ -71,7 +71,7 @@ jobs:
           draft: false
 
   build:
-    name: Build, Scan, & SBOM
+    name: Build / Scan Image and Publish SBOM
     needs: [configure] # Removed 'scan' and 'release' dependency to run faster
     runs-on: ubuntu-latest
     permissions:
@@ -167,7 +167,7 @@ jobs:
             packaged/${{ env.SBOM_PACKAGE }}.${{ needs.configure.outputs.version }}.zip
 
   create_attestations:
-    name: Create Attestations
+    name: Sign and Generate Attestation (SLSA)
     # Now waits for 'build' (which includes SBOM) and 'create-gh-release'
     needs: [configure, create-gh-release, build]
     runs-on: ubuntu-latest
@@ -197,7 +197,7 @@ jobs:
           subject-checksums: subject.checksums.txt
 
   octopus_handoff:
-    name: Handover to Octopus Deploy 🐙
+    name: Trigger Deployment in Octopus Deploy 🐙
     needs: [configure, build, create_attestations]
     runs-on: ubuntu-latest
     permissions:
