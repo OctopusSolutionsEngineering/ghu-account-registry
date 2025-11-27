@@ -197,7 +197,7 @@ jobs:
           subject-checksums: subject.checksums.txt
 
   octopus_handoff:
-    name: Trigger Deployment in Octopus Deploy 🐙
+    name: Deploy from Octopus Deploy 🐙
     needs: [configure, build, create_attestations]
     runs-on: ubuntu-latest
     permissions:
