@@ -71,7 +71,7 @@ jobs:
           draft: false
 
   build:
-    name: Build / Scan Image and Publish SBOM
+    name: Build/Scan Image, Publish SBOM
     needs: [configure] # Removed 'scan' and 'release' dependency to run faster
     runs-on: ubuntu-latest
     permissions:
@@ -167,7 +167,7 @@ jobs:
             packaged/${{ env.SBOM_PACKAGE }}.${{ needs.configure.outputs.version }}.zip
 
   create_attestations:
-    name: Sign and Generate Attestation (SLSA)
+    name: Sign/Generate Attestation (SLSA)
     # Now waits for 'build' (which includes SBOM) and 'create-gh-release'
     needs: [configure, create-gh-release, build]
     runs-on: ubuntu-latest
