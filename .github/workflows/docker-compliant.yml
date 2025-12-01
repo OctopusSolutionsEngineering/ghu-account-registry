@@ -1,4 +1,4 @@
-name: Build and Push Docker Image - Compliant
+name: Build and Push Docker Image - SLSA
 
 on:
   schedule:
@@ -15,7 +15,7 @@ env:
 jobs:
   configure:
     runs-on: ubuntu-latest
-    name: Pipeline Init & Versioning
+    name: Pipeline Init and Versioning
     outputs:
       version: ${{ steps.version-generator.outputs.version }}
     steps:
@@ -23,9 +23,10 @@ jobs:
         id: version-generator
         run: echo "version=$(date +'%y.%m.%d%H%M%S')" >> $GITHUB_OUTPUT
 
-  scan_sast:
+  scan:
+    # Runs in parallel with Build
     runs-on: ubuntu-latest
-    name: Source Analysis (SAST)
+    name: Scan Repo (SAST)
     needs: [configure] 
     permissions:
       security-events: write
@@ -46,7 +47,7 @@ jobs:
         with:
           sarif_file: "trivy-results.sarif"
 
-  build_image:
+  build:
     name: Build & Push Image
     needs: [configure]
     runs-on: ubuntu-latest
@@ -58,18 +59,34 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
+
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build API container
         working-directory: ./API/
         run: |
           docker build -f "Dockerfile" \
             --tag $DOCKER_HUB_REPOSITORY:${{ needs.configure.outputs.version }} .
+
+      # 1. TRIVY VULN SCAN (Blocks if Critical)
+      - name: Run Trivy vulnerability scanner on docker container
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          image-ref: ${{ env.DOCKER_HUB_REPOSITORY }}:${{ needs.configure.outputs.version }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+      # 2. PUSH IMAGE
       - name: Push Docker images
         id: push-docker-images
         working-directory: ./API
@@ -78,49 +95,24 @@ jobs:
           dockerSha=$(docker manifest inspect $DOCKER_HUB_REPOSITORY:${{ needs.configure.outputs.version }} -v | jq -r '.Descriptor.digest')
           echo "DEMO_APP_DOCKER_SHA=$dockerSha" >> $GITHUB_OUTPUT
 
-  # NEW JOB: Runs AFTER Build, but PARALLEL with SBOM
-  scan_image:
-    name: Run Vulnerability Scan
-    needs: [configure, build_image]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Run Trivy vulnerability scanner on docker container
-        uses: aquasecurity/trivy-action@0.32.0
-        with:
-          image-ref: ${{ env.DOCKER_HUB_REPOSITORY }}:${{ needs.configure.outputs.version }}
-          format: "table"
-          exit-code: "1" # This fails the pipeline if Critical vulns are found
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "HIGH,CRITICAL"
-
-  # NEW JOB: Runs AFTER Build, but PARALLEL with Scan
-  generate_sbom:
-    name: Generate & Publish SBOM
-    needs: [configure, build_image]
+  sbom:
+    name: Publish SBOM
+    # NEW STAGE: Runs after Build, before Release
+    needs: [configure, build]
     runs-on: ubuntu-latest
     permissions:
-        id-token: write
+      id-token: write
+      contents: read
     outputs:
-        sbom_hash: ${{ steps.determine_sbom_hash.outputs.SBOM_HASH }}
+      sbom_hash: ${{ steps.determine_sbom_hash.outputs.SBOM_HASH }}
     steps:
       - name: Login to Octopus Deploy
         uses: OctopusDeploy/login@v1
         with:
           server: ${{ env.OCTOPUS_URL }}
           service_account_id: ${{ env.OCTOPUS_SERVICE_ACCOUNT }}
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - name: Generate SBOM (SPDX)
+          
+      - name: Run Trivy in for SPDX mode for Octopus Deploy
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'image'
@@ -161,8 +153,8 @@ jobs:
 
   create-gh-release:
     name: Publish GitHub Release
-    # Release waits for the image to be built AND scanned (Quality Gate)
-    needs: [configure, scan_sast, build_image, scan_image]
+    # Now waits for 'scan' (SAST) AND 'sbom' (which implies Build is done)
+    needs: [configure, scan, sbom]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -183,9 +175,9 @@ jobs:
           draft: false
 
   create_attestations:
-    name: Sign & Generate Attestation (SLSA)
-    # Needs SBOM hash (from SBOM job) and Image hash (from Build job)
-    needs: [configure, create-gh-release, build_image, generate_sbom]
+    name: Sign/Generate Attestation (SLSA)
+    # Waits for Release (and implicitly SBOM/Build)
+    needs: [configure, create-gh-release, build, sbom]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -194,8 +186,9 @@ jobs:
       - name: Create the subject checksum file for provenance
         shell: pwsh
         run: |
-          $cleanedSbomSha = $("${{ needs.generate_sbom.outputs.sbom_hash }}" -replace "sha256:", "").Trim()
-          $cleanedImageSha = $("${{ needs.build_image.outputs.app_hash }}" -replace "sha256:", "").Trim()
+          # sbom_hash comes from 'sbom' job, app_hash comes from 'build' job
+          $cleanedSbomSha = $("${{ needs.sbom.outputs.sbom_hash }}" -replace "sha256:", "").Trim()
+          $cleanedImageSha = $("${{ needs.build.outputs.app_hash }}" -replace "sha256:", "").Trim()
 
           $imageSubject = "${{ env.DOCKER_HUB_REPOSITORY }}:${{ needs.configure.outputs.version }}".Trim()
           $sbomSubject = "${{ env.SBOM_PACKAGE }}.${{ needs.configure.outputs.version }}.zip".Trim()
@@ -212,7 +205,7 @@ jobs:
           subject-checksums: subject.checksums.txt
 
   octopus_handoff:
-    name: 🐙 Trigger Delivery
+    name: Deploy from Octopus Deploy 🐙
     needs: [configure, create_attestations]
     runs-on: ubuntu-latest
     permissions:
