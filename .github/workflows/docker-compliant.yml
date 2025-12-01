@@ -1,4 +1,4 @@
-name: Build and Push Docker Image - SLSA
+name: Build and Push Docker Image - Compliant
 
 on:
   schedule:
