@@ -208,3 +208,5 @@ jobs:
         with:
           server: ${{ env.OCTOPUS_URL }}
           service_account_id: ${{ env.OCTOPUS_SERVICE_ACCOUNT }}
+      - name: Trigger deployment 🐙
+        run: sleep 60
