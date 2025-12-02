@@ -1,8 +1,6 @@
 name: Supply Chain Verified Build Pipeline
 
 on:
-  schedule:
-    - cron: "33 13-22 * * 1-5"
   workflow_dispatch: {}
 
 env:
