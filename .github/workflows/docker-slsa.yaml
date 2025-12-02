@@ -193,6 +193,8 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-checksums: subject.checksums.txt
+      - name: Cleanup
+        run: sleep 60
 
   octopus_handoff:
     name: Deploy from Octopus Deploy 🐙
@@ -201,8 +203,6 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: Trigger deployment 🐙
-        run: sleep 60
       - name: Login to Octopus Deploy 🐙
         uses: OctopusDeploy/login@v1
         with:
