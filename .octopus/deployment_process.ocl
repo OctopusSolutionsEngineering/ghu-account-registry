@@ -25,34 +25,6 @@ process_template "verify-build-artifacts" {
     }
 }
 
-process_template "verify-artifacts" {
-    is_disabled = true
-    name = "Verify Artifacts"
-    process_template_slug = "dsc-verify-build-artifacts-docker"
-    version_mask = "1.X"
-
-    package_parameter "Template.SBOM.Artifact" {
-        feed = "octopus-server-built-in"
-        package_id = "ghu-account-registry.sbom"
-    }
-
-    parameter "Template.Docker.Account" {
-        value = "AccountManagement.Accounts.Docker"
-    }
-
-    parameter "Template.Verify.WorkerPool" {
-        value = "WorkerPools-5336"
-    }
-
-    parameter "Template.Verify.ExecutionContainerFeed" {
-        value = "Feeds-7423"
-    }
-
-    parameter "Template.Git.AuthToken" {
-        value = "#{GitHub.Token}"
-    }
-}
-
 process_template "deploy-api" {
     name = "Deploy API"
     process_template_slug = "ph-kubernetes-deploy-yaml-demo-app"
