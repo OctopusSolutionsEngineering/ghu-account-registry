@@ -10,4 +10,33 @@ run_retention_policy {
     type = "Default"
 }
 
-process {}
+process {
+    step "run-a-script" {
+        name = "Run a Script"
+        properties = {
+            Octopus.Action.TargetRoles = "account-registry"
+        }
+
+        action {
+            action_type = "Octopus.Script"
+            properties = {
+                Octopus.Action.RunOnServer = "false"
+                Octopus.Action.Script.ScriptBody = "Write-Host \"test\""
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+                OctopusUseBundledTooling = "False"
+            }
+            worker_pool_variable = ""
+
+            packages "ghu-ach-router.sbom" {
+                acquisition_location = "Server"
+                feed = "octopus-server-built-in"
+                package_id = "ghu-ach-router.sbom"
+                properties = {
+                    Extract = "False"
+                    SelectionMode = "immediate"
+                }
+            }
+        }
+    }
+}
